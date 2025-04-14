@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432" # Expose the standard PostgreSQL port
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    restart: always
+    ports:
+      - "6432:6432" # Expose the pgbouncer port
+    environment:
+      POOL_MODE: transaction #or session, statement
+      LISTEN_ADDR: '*' # Listen on all interfaces
+      LISTEN_PORT: 6432
+      AUTH_TYPE: scram-sha-256
+      USERS: myuser
+      PASSWORDS: mypassword
+      DATABASES: mydb
+      DEFAULT_POOL_SIZE: 100
+      MAX_CLIENT_CONN: 1000
+    depends_on:
+      - postgres
+    volumes:
+      - ./pgbouncer.ini:/pgbouncer.ini
+      - ./userlist.txt:/userlist.txt
+    command: ["-d", "/pgbouncer.ini"]
+
+volumes:
+  postgres_data:
